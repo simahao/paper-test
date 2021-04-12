@@ -1,20 +1,24 @@
 import pandas as pd
 
 
-def read_a(K):
+def read_a(K=40000):
     sk = {}
-    df = pd.DataFrame(pd.read_csv("./data/neighbour150-200.csv", sep=","))
+    df = pd.DataFrame(pd.read_csv("./data/neighbour150-200 copy.csv", sep=","))
     site = 0
+    neighbours = {}
     for index, row in df.iterrows():
         benefit = int(0)
-        nei_list = []
-        if (row["site_id"] != site):
-            print("aa")
+        if (row["site"] != site and site != 0):
+            # if there isn't more es(i)'s neighbour
+            for (key, value) in neighbours.items():
+                if (benefit < K):
+                    sk[key] = value
+                    benefit = benefit + value
+            neighbours.clear()
         else:
-            for nei in nei_list:
-                print(nei)
+            neighbours[row["nei_site"]] = row["counts"]
+        site = row["site"]
 
 
 if __name__ == "__main__":
-    k = int(10)
-    read_a(k)
+    read_a()
