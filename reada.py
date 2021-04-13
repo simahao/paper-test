@@ -3,9 +3,9 @@ import pandas as pd
 
 
 def read_a(K=400):
-    sk = {}
     df = pd.DataFrame(pd.read_csv("./data/neighbour150-200 copy.csv", sep=","))
     site = 0
+    sk = {}
     neighbours = {}
     for (index, row) in df.iterrows():
         benefit_sum = 0 
@@ -18,6 +18,7 @@ def read_a(K=400):
                 if (benefit_esi + benefit_sum < K):
                     sk[key] = value
                     benefit_sum = benefit_sum + value
+            
             benefit_esi = 0
             neighbours.clear()
         else:
