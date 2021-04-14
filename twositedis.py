@@ -28,14 +28,13 @@ def calculate_dis():
                     app_users = sta[sta.SITE_ID == row_out["SITE_ID"]].iat[0, 1]
                     nei_df = nei_df.append({"site" : row_out["SITE_ID"], "nei_site" : np.nan, "distance" : app_users, "counts" : 99999}, ignore_index=True)
 
-    nei_df["site"] = nei_df["site"].astype('Int64')
-    nei_df["nei_site"] = nei_df["nei_site"].astype('Int64')
-    nei_df["distance"] = nei_df["distance"].astype('Int64')
-    nei_df["counts"] = nei_df["counts"].astype('Int64')
+    nei_df["site"] = nei_df["site"].astype("Int64")
+    nei_df["nei_site"] = nei_df["nei_site"].astype("Int64")
+    nei_df["distance"] = nei_df["distance"].astype("Int64")
+    nei_df["counts"] = nei_df["counts"].astype("Int64")
     nei_df.sort_values(by=["site", "counts"], ascending=[True, False], inplace=True)
 
     nei_df.to_csv("./data/neighbour150-200.csv", index=False)
 
 if __name__ == "__main__":
     calculate_dis()
-    # gen_device_site()
