@@ -8,7 +8,7 @@ class ReadA:
     """doc"""
     # cadidate of sk
     __sk_candidate = {"sum" : 0}
-    # last result 
+    # last result
     __sk = {"sum" : 0}
     # current site_id
     __site = 0
@@ -18,7 +18,7 @@ class ReadA:
     __benefit_nei_sum = 0
     # whether benefit of es(i)'s neighbour is over or not
     __iter_over_flag = False
-    # target number of edge servers 
+    # target number of edge servers
     __K = 0
 
     # iterate number of es(i)'s neighbour, include es(i) itself
@@ -32,9 +32,40 @@ class ReadA:
         self.__sk_candidate.clear()
         self.__sk.clear()
 
-    def __get_other_es(self):
-        remain_es = self.__K - self.__iter_num
-        pass
+    def __get_extra_es(self) -> Boolean:
+        extra_es = self.__K - self.__iter_num
+        if (extra_es <= 0):
+            print("logical has error!")
+            return False
+
+
+        for site in self.__sk_candidate.keys():
+            # if site_id equals to "sum" or esi
+            # logic should exclude these two data
+            if (site == self.__site or site == "sum"):
+                break
+            # find neighbours of __sk_candidate set according to query condition(site) form __df
+            ex_df = pd.DataFrame(self.__df[self.__df.site == site])
+            if (ex_df.iloc[0, 3] == 99999):
+                ex_df.iloc[0, 3] = ex_df.iloc[0, 2]
+                ex_df.sort_values(by=["counts"], ascending=False, inplace=True)
+
+            for (index, row) in ex_df.iterrows():
+                # extra edge server should not exist in sk_candidate
+                if (self.__sk_candidate.has_key(row["site"])):
+                    continue
+                extra_es = extra_es - 1
+                self.__sk_candidate[row["site"]] = row["counts"]
+                self.__benefit_nei_sum = self.__benefit_nei_sum + row["counts"]
+                if (extra_es == 0):
+                    over_flag = True
+                    break
+            if (over_flag == True):
+                break
+
+        if (extra_es > 0):
+            # find extra_es edge servers randomly
+            pass
 
     def read_a(self):
 
@@ -43,7 +74,7 @@ class ReadA:
             if (row["site"] != self.__site):
                 # number of es(i)'s neighbour could not satisfy with condition(K)
                 if (self.__site != 0 and self.__iter_num == False):
-                    self.__get_other_es()
+                    self.__get_extend_es()
                 else:
                     self.__iter_over_flag = False
 
@@ -69,7 +100,7 @@ class ReadA:
                 self.__benefit_nei = row["counts"]
                 self.__sk_candidate[row["nei_site"]] = self.__benefit_nei
                 self.__benefit_nei_sum = self.__benefit_nei_sum + self.__benefit_nei
-                
+
                 self.__iter_num = self.__iter_num + 1
 
             # if benefit greater than or equal K, we have found one solution

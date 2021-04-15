@@ -6,9 +6,9 @@ from geopy.distance import geodesic
 
 
 def calculate_dis():
-    site_df = pd.DataFrame(pd.read_csv('./data/site.csv', sep = ','))
+    site_df = pd.DataFrame(pd.read_csv("./data/site.csv", sep = ","))
     nei_df = pd.DataFrame(columns=["site", "nei_site", "distance"])
-    sta = pd.DataFrame(pd.read_csv("./data/device-site.csv", sep=','))
+    sta = pd.DataFrame(pd.read_csv("./data/device-site.csv", sep=","))
     app_users = int(0)
 
     for index_out, row_out in site_df.iterrows():
