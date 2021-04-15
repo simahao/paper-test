@@ -7,7 +7,7 @@ import pandas as pd
 class ReadA:
     """doc"""
     # cadidate of sk
-    __sk_candidate = {"sum" : 0}
+    __sk_candidate = {}
     # last result
     __sk = {"sum" : 0}
     # current site_id
@@ -32,30 +32,32 @@ class ReadA:
         self.__sk_candidate.clear()
         self.__sk.clear()
 
-    def __get_extra_es(self) -> Boolean:
+    def __get_extra_es(self) -> bool:
         extra_es = self.__K - self.__iter_num
         if (extra_es <= 0):
             print("logical has error!")
             return False
-
-
-        for site in self.__sk_candidate.keys():
-            # if site_id equals to "sum" or esi
-            # logic should exclude these two data
-            if (site == self.__site or site == "sum"):
-                break
+        over_flag = False
+        old_sk_candidate = copy.deepcopy(self.__sk_candidate)
+        for site in old_sk_candidate.keys():
+            # if site_id equals to esi
+            # logic should exclude key 
+            if (site == self.__site):
+                continue
             # find neighbours of __sk_candidate set according to query condition(site) form __df
             ex_df = pd.DataFrame(self.__df[self.__df.site == site])
             if (ex_df.iloc[0, 3] == 99999):
                 ex_df.iloc[0, 3] = ex_df.iloc[0, 2]
+                ex_df.iloc[0, 2] = 99999
                 ex_df.sort_values(by=["counts"], ascending=False, inplace=True)
+                print(ex_df)
 
             for (index, row) in ex_df.iterrows():
                 # extra edge server should not exist in sk_candidate
-                if (self.__sk_candidate.has_key(row["site"])):
+                if (row["distance"] == 99999):
                     continue
                 extra_es = extra_es - 1
-                self.__sk_candidate[row["site"]] = row["counts"]
+                self.__sk_candidate[row["nei_site"]] = row["counts"]
                 self.__benefit_nei_sum = self.__benefit_nei_sum + row["counts"]
                 if (extra_es == 0):
                     over_flag = True
@@ -63,9 +65,31 @@ class ReadA:
             if (over_flag == True):
                 break
 
-        if (extra_es > 0):
-            # find extra_es edge servers randomly
-            pass
+        if (extra_es == 0):
+            self.__sk_candidate["sum"] = self.__benefit_nei_sum
+            if (self.__sk_candidate["sum"] > self.__sk["sum"]):
+                self.__sk.clear()
+                self.__sk = copy.deepcopy(self.__sk_candidate)
+                self.__sk_candidate.clear()
+            return True
+        # random find extra es
+        candidate_list = self.__sk_candidate.keys()
+        # del candidate_list[len(candidate_list) - 1]
+        remain_df = self.__df[~self.__df["site"].isin(candidate_list)]
+        unique_site = remain_df["site"].unique()
+        for extra_site in unique_site:
+            if (extra_es == 0):
+                self.__sk_candidate["sum"] = self.__benefit_nei_sum
+                if (self.__sk_candidate["sum"] > self.__sk["sum"]):
+                    self.__sk.clear()
+                    self.__sk = copy.deepcopy(self.__sk_candidate)
+                    self.__sk_candidate.clear()
+                break
+            benefit = remain_df[remain_df.site == extra_site].iat[0, 3]
+            if (benefit == 99999):
+                benefit = remain_df[remain_df.site == extra_site].iat[0, 2]
+            self.__sk_candidate[extra_site] = benefit
+        return True
 
     def read_a(self):
 
@@ -73,12 +97,13 @@ class ReadA:
             # if this row'site is not equal to site(old site), it means new iteration
             if (row["site"] != self.__site):
                 # number of es(i)'s neighbour could not satisfy with condition(K)
-                if (self.__site != 0 and self.__iter_num == False):
-                    self.__get_extend_es()
+                if (self.__site != 0 and self.__iter_num < self.__K ):
+                    self.__get_extra_es()
+                    break
                 else:
                     self.__iter_over_flag = False
-
-                self.__sk_candidate.clear()
+                if (self.__site != 0):
+                    self.__sk_candidate.clear()
                 # this row is es(i) itself
                 if (row["counts"] == 99999):
                     # if counts==99999, app_users counts is saved in "distance" field, because of convenience for sorting
