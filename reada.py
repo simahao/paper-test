@@ -41,7 +41,7 @@ class ReadA:
         old_sk_candidate = copy.deepcopy(self.__sk_candidate)
         for site in old_sk_candidate.keys():
             # if site_id equals to esi
-            # logic should exclude key 
+            # logic should exclude key
             if (site == self.__site):
                 continue
             # find neighbours of __sk_candidate set according to query condition(site) form __df
@@ -50,7 +50,7 @@ class ReadA:
                 ex_df.iloc[0, 3] = ex_df.iloc[0, 2]
                 ex_df.iloc[0, 2] = 99999
                 ex_df.sort_values(by=["counts"], ascending=False, inplace=True)
-                print(ex_df)
+                # print(ex_df)
 
             for (index, row) in ex_df.iterrows():
                 # extra edge server should not exist in sk_candidate
@@ -83,23 +83,35 @@ class ReadA:
                 if (self.__sk_candidate["sum"] > self.__sk["sum"]):
                     self.__sk.clear()
                     self.__sk = copy.deepcopy(self.__sk_candidate)
+                    # print("cadidate of solution:{}".format(self.__sk_candidate))
                     self.__sk_candidate.clear()
                 break
             benefit = remain_df[remain_df.site == extra_site].iat[0, 3]
             if (benefit == 99999):
                 benefit = remain_df[remain_df.site == extra_site].iat[0, 2]
             self.__sk_candidate[extra_site] = benefit
+            self.__benefit_nei_sum = self.__benefit_nei_sum + benefit
+            extra_es = extra_es - 1
+
+        if (extra_es > 0):
+            print("there is no enough edge server for READA")
+            return False
         return True
 
     def read_a(self):
 
+        has_error = False
         for (index, row) in self.__df.iterrows():
             # if this row'site is not equal to site(old site), it means new iteration
             if (row["site"] != self.__site):
                 # number of es(i)'s neighbour could not satisfy with condition(K)
                 if (self.__site != 0 and self.__iter_num < self.__K ):
-                    self.__get_extra_es()
-                    break
+                    if (self.__get_extra_es() == True):
+                        self.__site = row["site"]
+                        continue
+                    else:
+                        has_error = True
+                        break
                 else:
                     self.__iter_over_flag = False
                 if (self.__site != 0):
@@ -133,7 +145,7 @@ class ReadA:
                 self.__iter_over_flag = True
                 # if __iter_num >= K，__sk_candidate is one of solution
                 self.__sk_candidate["sum"] = self.__benefit_nei_sum
-                print("new solution of candidate:{}".format(self.__sk_candidate))
+                print("candidate of solution:{}".format(self.__sk_candidate))
                 # if benefit of this new solution is greater than maximum's benefit
                 # this new solution is become new result
                 if (self.__sk_candidate["sum"] > self.__sk["sum"]):
@@ -141,12 +153,13 @@ class ReadA:
                     self.__sk = copy.deepcopy(self.__sk_candidate)
                 # clear __sk_candidate for next round compute
                 self.__sk_candidate.clear()
+
             # self.__judge_benefit()
             # mark current site_id
             self.__site = row["site"]
-
-        print("last solution:{}".format(self.__sk))
+        if (has_error == False):
+            print("last solution:{}".format(self.__sk))
 
 if __name__ == "__main__":
-    ins = ReadA("./data/neighbour150-200 copy.csv", 10)
+    ins = ReadA("./data/neighbour-0.1.csv", 10)
     ins.read_a()
