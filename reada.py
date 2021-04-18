@@ -46,6 +46,8 @@ class ReadA:
                 continue
             # find neighbours of __sk_candidate set according to query condition(site) form __df
             ex_df = pd.DataFrame(self.__df[self.__df.site == site])
+            if (ex_df.empty):
+                continue
             if (ex_df.iloc[0, 3] == 99999):
                 ex_df.iloc[0, 3] = ex_df.iloc[0, 2]
                 ex_df.iloc[0, 2] = 99999
@@ -83,8 +85,8 @@ class ReadA:
                 if (self.__sk_candidate["sum"] > self.__sk["sum"]):
                     self.__sk.clear()
                     self.__sk = copy.deepcopy(self.__sk_candidate)
-                    # print("cadidate of solution:{}".format(self.__sk_candidate))
                     self.__sk_candidate.clear()
+                    print("candidate of solution:{}".format(self.__sk))
                 break
             benefit = remain_df[remain_df.site == extra_site].iat[0, 3]
             if (benefit == 99999):
@@ -106,14 +108,10 @@ class ReadA:
             if (row["site"] != self.__site):
                 # number of es(i)'s neighbour could not satisfy with condition(K)
                 if (self.__site != 0 and self.__iter_num < self.__K ):
-                    if (self.__get_extra_es() == True):
-                        self.__site = row["site"]
-                        continue
-                    else:
+                    if (self.__get_extra_es() == False):
                         has_error = True
                         break
-                else:
-                    self.__iter_over_flag = False
+                self.__iter_over_flag = False
                 if (self.__site != 0):
                     self.__sk_candidate.clear()
                 # this row is es(i) itself
@@ -161,5 +159,5 @@ class ReadA:
             print("last solution:{}".format(self.__sk))
 
 if __name__ == "__main__":
-    ins = ReadA("./data/neighbour-0.1.csv", 10)
+    ins = ReadA("./data/neighbour-full.csv", 10)
     ins.read_a()
