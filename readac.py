@@ -4,8 +4,11 @@ import numpy as np
 import pandas as pd
 
 
-class ReadA:
-    """doc"""
+class ReadAC:
+    """
+    C means user coverage, if node's a*R - b*C > 0, this node will be
+    added network. ReadA only consider R(rubust) > 0
+    """
     # cadidate of sk
     __sk_candidate = {}
     # last result
@@ -149,7 +152,7 @@ class ReadA:
                 if (self.__sk_candidate["sum"] > self.__sk["sum"]):
                     self.__sk.clear()
                     self.__sk = copy.deepcopy(self.__sk_candidate)
-                # clear __sk_candidate for next round compute
+                # clear __sk_candidate for next rond compute
                 self.__sk_candidate.clear()
 
             # self.__judge_benefit()
@@ -157,12 +160,7 @@ class ReadA:
             self.__site = row["site"]
         if (has_error == False):
             print("last solution:{}".format(self.__sk))
-            self.__print_info()
 
-    def __print_info(self):
-        sum1 = pd.DataFrame(self.__df[self.__df["counts"] != 99999])["counts"].sum()
-        sum2 = pd.DataFrame(self.__df[self.__df["counts"] == 99999])["distance"].sum()
-        print("solution includes users:{}\ntotoal users:{}\nrobust value:{}".format(self.__sk["sum"], sum1 + sum2, round(self.__sk["sum"] / (sum1 + sum2), 4)))
 if __name__ == "__main__":
     ins = ReadA("./data/neighbour-full.csv", 10)
     ins.read_a()
