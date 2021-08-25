@@ -30,8 +30,8 @@ class ReadAC:
     __alpha = 1
     __beta = 0
 
-    ESI_PESUDO = 99999 
-    DEBUG = True 
+    ESI_PESUDO = 99999
+    DEBUG = True
 
     def __init__(self, neighbour_csv, K=10, alpha=1, beta=0):
         self.__K = K
@@ -72,10 +72,10 @@ class ReadAC:
                 if (row["nei_site"] == self.__site):
                     continue
                 alpha = row["counts"]
-                beta = self.__get_coverage_benefits(row["nei_site"]) 
+                beta = self.__get_coverage_benefits(row["nei_site"])
                 if (round(self.__alpha * alpha - self.__beta * beta) > 0):
-                    self.__benefit_nei = alpha 
-                    self.__sk_candidate[row["nei_site"]] = self.__benefit_nei 
+                    self.__benefit_nei = alpha
+                    self.__sk_candidate[row["nei_site"]] = self.__benefit_nei
                     self.__benefit_nei_sum = self.__benefit_nei_sum + self.__benefit_nei
                     extra_es = extra_es - 1
                     if (extra_es == 0):
@@ -115,10 +115,10 @@ class ReadAC:
             benefit = remain_df[remain_df.site == extra_site].iat[0, 3]
             if (benefit == self.ESI_PESUDO):
                 alpha = remain_df[remain_df.site == extra_site].iat[0, 2]
-                beta = self.__get_coverage_benefits(extra_site)  
+                beta = self.__get_coverage_benefits(extra_site)
                 if (round(self.__alpha * alpha - self.__beta * beta) > 0):
-                    self.__sk_candidate[extra_site] = alpha 
-                    self.__benefit_nei_sum = self.__benefit_nei_sum + alpha 
+                    self.__sk_candidate[extra_site] = alpha
+                    self.__benefit_nei_sum = self.__benefit_nei_sum + alpha
                     extra_es = extra_es - 1
 
         if (extra_es > 0):
@@ -129,7 +129,7 @@ class ReadAC:
     def __get_coverage_benefits(self, site_id) -> int:
         """
         A is center node, node C is neighbour of node B, whether node B join node A or not,
-        depends on whether node B's alpha*R - beta*C > 0 
+        depends on whether node B's alpha*R - beta*C > 0
         """
         # get sum(users) of es(site)'s neighbour as coverage beneifit for site
         df = self.__df.query('counts != @self.ESI_PESUDO and site == @site_id')
@@ -167,11 +167,11 @@ class ReadAC:
                 # this es(i) has not benefit for itself, but this es(i) has neighbour's benefit
                 else:
                     self.__benefit_esi = 0
-                    alpha = row["counts"] 
+                    alpha = row["counts"]
                     beta = self.__get_coverage_benefits(row["nei_site"])
                     if (round(self.__alpha * alpha - self.__beta * beta) > 0):
                         self.__sk_candidate[row["nei_site"]] = alpha
-                        self.__benefit_nei_sum = alpha 
+                        self.__benefit_nei_sum = alpha
                     else:
                         continue
                 self.__iter_num = 1
@@ -182,7 +182,7 @@ class ReadAC:
                     continue
                 # if there isn't more es(i)'s neighbour, compute benefit for joining of es(i)'s neighbour
                 alpha = row["counts"]
-                beta = self.__get_coverage_benefits(row["nei_site"]) 
+                beta = self.__get_coverage_benefits(row["nei_site"])
                 if (round(self.__alpha * alpha - self.__beta * beta) > 0):
                     self.__benefit_nei = alpha
                     self.__sk_candidate[row["nei_site"]] = self.__benefit_nei
@@ -213,6 +213,6 @@ class ReadAC:
             self.__print_info()
 
 if __name__ == "__main__":
-    ins = ReadAC("./data/neighbour-full.csv", 10, 1, 0)
+    ins = ReadAC("./data/neighbour-full.csv", 10, 0.6, 0.4)
     ins.read_ac()
-    
+
