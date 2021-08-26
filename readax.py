@@ -48,24 +48,28 @@ class ReadA:
         # __sk_server[0] is initial edge server, its counts equals to 99999, exclude it
         tmp_sk_server = copy.deepcopy(self.__sk_server)
         for i in range(1, len(tmp_sk_server)):
-            nei_nei = self.__df.query('site == @tmp__sk_server[i] and counts != @self.ESI_PESUDO and counts > 0').sort_values(by="counts", axis=0, ascending=False)
+            nei_nei = self.__df.query('site == @tmp_sk_server[@i] and counts != @self.ESI_PESUDO and counts > 0').sort_values(by="counts", axis=0, ascending=False)
+            if (nei_nei.empty):
+                continue
             for (index, esj) in nei_nei.iterrows():
                 if (self.__iter_num < self.__K):
-                    self.__sk_candidate[esj["site"]] = esj["counts"]
+                    self.__sk_candidate[esj["nei_site"]] = esj["counts"]
                     self.__sk_server.append(esj)
                     self.__iter_num = self.__iter_num + 1
                 else:
                     if (self.DEBUG == True):
                         print("candidate of solution:{}".format(self.__sk_candidate))
                     break
+            if (self.__iter_num == self.__K):
+                break
 
         # step 2: random find some edge servers for satisfying K
         if (self.__iter_num < self.__K):
-            remain_df = self.__es[~self.__es["site"].isin(self.__sk_server)]
+            remain_df = self.__es[~self.__es.isin(self.__sk_server)]
             remain_nums = self.__K - self.__iter_num
             rand_index = np.random.randint(0, len(remain_df), remain_nums)
             for i in range(0, remain_nums):
-                row = remain_df.iloc[rand_index[i], 3]
+                row = remain_df.iloc[rand_index[i]]
                 self.__sk_candidate[row["site"]] = row["counts"] 
                 self.__sk_server.append(row["site"])
                 self.__iter_num = self.__iter_num + 1
@@ -82,16 +86,19 @@ class ReadA:
             self.__sk_server.clear()
             self.__robustness = 0
             self.__iter_num = 1
-            self.__sk_candidate[esi] = self.__df.query('site == @esi and counts == @self.ESI_PESUDO')["distance"]
+            esi_rubust_df = self.__df.query('site == @esi and counts == @self.ESI_PESUDO')
+            if (not esi_rubust_df.empty): 
+                self.__sk_candidate[esi] = esi_rubust_df.iloc[0, 2]
             self.__sk_server.append(esi)
             esj_df = self.__df.query('site == @esi and counts != @self.ESI_PESUDO and counts > 0').sort_values(by='counts', axis=0, ascending=False)
             if (esj_df.empty):
                 continue
             if (self.DEBUG == True):
-                print(esj_df)
+                pass
+                # print(esj_df)
             for (index_j, esj) in esj_df.iterrows():
                 if (self.__iter_num < self.__K):
-                    self.__sk_candidate[esj["site"]] = esj["counts"]
+                    self.__sk_candidate[esj["nei_site"]] = esj["counts"]
                     self.__sk_server.append(esj["site"])
                     self.__iter_num = self.__iter_num + 1
                 else:
