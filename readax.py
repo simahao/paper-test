@@ -45,11 +45,24 @@ class ReadA:
     def __get_extra_es(self) -> bool:
 
         # step 1: find neightbours of sk_candidate
-        for i in range(1, len(self.__sk_server)):
-
+        # __sk_server[0] is initial edge server, exclude it
+        tmp_sk_server = copy.deepcopy(self.__sk_server)
+        for i in range(1, len(tmp_sk_server)):
+            nei_nei = self.__df.query('site == @tmp__sk_server[i] and counts != @ESI_PESUDO and counts > 0').sort_values(by="counts", axis=0, ascending=False)
+            for (index, esj) in nei_nei.iterrows():
+                if (self.__iter_num < self.__K):
+                    self.__sk_candidate[esj] = esj["counts"]
+                    self.__sk_server.append(esj)
+                    self.__iter_num = self.__iter_num + 1
+                else:
+                    if (DEBUG == True):
+                        print("candidate of solution:{}".format(self.__sk_candidate))
+                    break
 
         # step 2: random find some edge servers for satisfying K
-        remain_df = self.__es[~self.__es["site"].isin(self.__sk_server)]
+        if (self.__iter_num < self.__K):
+            remain_df = self.__es[~self.__es["site"].isin(self.__sk_server)]
+            remain_nums = self.__K - self.__iter_num
 
 
 
