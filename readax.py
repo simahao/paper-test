@@ -45,17 +45,17 @@ class ReadA:
     def __get_extra_es(self) -> bool:
 
         # step 1: find neightbours of sk_candidate
-        # __sk_server[0] is initial edge server, exclude it
+        # __sk_server[0] is initial edge server, its counts equals to 99999, exclude it
         tmp_sk_server = copy.deepcopy(self.__sk_server)
         for i in range(1, len(tmp_sk_server)):
-            nei_nei = self.__df.query('site == @tmp__sk_server[i] and counts != @ESI_PESUDO and counts > 0').sort_values(by="counts", axis=0, ascending=False)
+            nei_nei = self.__df.query('site == @tmp__sk_server[i] and counts != @self.ESI_PESUDO and counts > 0').sort_values(by="counts", axis=0, ascending=False)
             for (index, esj) in nei_nei.iterrows():
                 if (self.__iter_num < self.__K):
-                    self.__sk_candidate[esj] = esj["counts"]
+                    self.__sk_candidate[esj["site"]] = esj["counts"]
                     self.__sk_server.append(esj)
                     self.__iter_num = self.__iter_num + 1
                 else:
-                    if (DEBUG == True):
+                    if (self.DEBUG == True):
                         print("candidate of solution:{}".format(self.__sk_candidate))
                     break
 
@@ -63,32 +63,43 @@ class ReadA:
         if (self.__iter_num < self.__K):
             remain_df = self.__es[~self.__es["site"].isin(self.__sk_server)]
             remain_nums = self.__K - self.__iter_num
+            rand_index = np.random.randint(0, len(remain_df), remain_nums)
+            for i in range(0, remain_nums):
+                row = remain_df.iloc[rand_index[i], 3]
+                self.__sk_candidate[row["site"]] = row["counts"] 
+                self.__sk_server.append(row["site"])
+                self.__iter_num = self.__iter_num + 1
+        if (self.__iter_num < self.__K):
+            return False
+        return True
 
 
 
 
     def read_a(self):
-        for (index_i, esi) in self.__es.iterrows():
+        for esi in self.__es: 
             self.__sk_candidate.clear()
             self.__sk_server.clear()
             self.__robustness = 0
             self.__iter_num = 1
-            self.__sk_candidate[esi] = self.__df.query('site == @esi and counts == @ESI_PESUDO')["distance"]
+            self.__sk_candidate[esi] = self.__df.query('site == @esi and counts == @self.ESI_PESUDO')["distance"]
             self.__sk_server.append(esi)
-            esj_df = self.__df.query('site == @esi and counts != @ESI_PESUDO and counts > 0').sort_values(by='counts', axis=0, ascending=False)
-            if (DEBUG == True):
+            esj_df = self.__df.query('site == @esi and counts != @self.ESI_PESUDO and counts > 0').sort_values(by='counts', axis=0, ascending=False)
+            if (esj_df.empty):
+                continue
+            if (self.DEBUG == True):
                 print(esj_df)
             for (index_j, esj) in esj_df.iterrows():
                 if (self.__iter_num < self.__K):
-                    self.__sk_candidate[esj] = esj["counts"]
-                    self.__sk_server.append(esj)
+                    self.__sk_candidate[esj["site"]] = esj["counts"]
+                    self.__sk_server.append(esj["site"])
                     self.__iter_num = self.__iter_num + 1
                 else:
-                    if (DEBUG == True):
+                    if (self.DEBUG == True):
                         print("candidate of solution:{}".format(self.__sk_candidate))
                     break
             if (self.__iter_num < self.__K):
-                if (__get_extra_es() == False):
+                if (self.__get_extra_es() == False):
                     print("there are not enough edge servers this time")
                     break
 
