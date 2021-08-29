@@ -140,9 +140,10 @@ class ReadAC:
             # es(site_id) itself, so return distance(user counts)
 
     def __print_info(self):
-        sum1 = pd.DataFrame(self.__df[self.__df["counts"] != 99999])["counts"].sum()
-        sum2 = pd.DataFrame(self.__df[self.__df["counts"] == 99999])["distance"].sum()
-        print("solution includes users:{}\ntotoal users:{}\nrobust value:{}".format(self.__sk["sum"], sum1 + sum2, round(self.__sk["sum"] / (sum1 + sum2), 4)))
+
+        dfp = self.__df.query('counts == @self.ESI_PESUDO').join(self.__es.set_index('site'), on='site', how='inner')
+        sum = dfp["distance"].sum()
+        print("sum:{}".format(sum))
 
     def read_ac(self):
 
