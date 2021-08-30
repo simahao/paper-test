@@ -12,7 +12,7 @@ class ReadA:
     # target number of edge servers
     __K = 0
 
-    # total number of candidate 
+    # total number of candidate
     __total = 0
 
     # iterate number of es(i)'s neighbour, include es(i) itself
@@ -21,19 +21,19 @@ class ReadA:
     # save edge server's name
     __sk_server = []
 
-    # save edge server's robust 
+    # save edge server's robust
     __sk_robust = []
 
     __col = []
 
-    __coverage = [] 
+    __coverage = []
 
     __sk_id = 0
 
     # constants for edge server itself
     ESI_PESUDO = 99999
 
-    DEBUG = True 
+    DEBUG = True
 
     def __init__(self, neighbour_csv, K=10):
         self.__K = K
@@ -94,7 +94,7 @@ class ReadA:
                 i = i + 1
                 if (row["site"] in self.__sk_candidate):
                     continue
-                self.__sk_candidate[row["site"]] = row["distance"] 
+                self.__sk_candidate[row["site"]] = row["distance"]
                 self.__sk_server.append(row["site"])
                 self.__sk_robust.append(row["distance"])
                 self.__iter_num = self.__iter_num + 1
@@ -117,7 +117,7 @@ class ReadA:
 
 
     def read_a(self):
-        for esi in self.__es: 
+        for esi in self.__es:
             self.__sk_candidate.clear()
             self.__sk_server.clear()
             self.__sk_robust.clear()
@@ -125,7 +125,7 @@ class ReadA:
             self.__iter_num = 1
 
             esi_rubust_df = self.__df.query('site == @esi and counts == @self.ESI_PESUDO')
-            if (not esi_rubust_df.empty): 
+            if (not esi_rubust_df.empty):
                 self.__sk_candidate[esi] = esi_rubust_df.iloc[0, 2]
             else:
                 continue
@@ -164,12 +164,12 @@ class ReadA:
 
     def extra_coverage(self):
         # tmp = copy.deepcopy(self.__rlt_server)
-        tmp = self.__rlt_robust.join(self.__rlt_server.set_index('sk_id'), on='sk_id', how='inner', lsuffix="_left") 
+        tmp = self.__rlt_robust.join(self.__rlt_server.set_index('sk_id'), on='sk_id', how='inner', lsuffix="_left")
         tmp = tmp.iloc[:, len(self.__col) + 1:]
         # iterate each row in rlt for extra coverage
         for (index, row) in tmp.iterrows():
             # get one row as list
-            servers = row.to_list() 
+            servers = row.to_list()
             cov = 0
             # iterate each element in list, exclude last "sum"
             for i in range(len(servers)):
@@ -181,10 +181,11 @@ class ReadA:
                         continue
                     cov = cov +  ex["counts"]
             self.__coverage.append(cov)
-        self.__rlt_robust["extra_cov"] = pd.DataFrame(self.__coverage, columns=['extra_cov']) 
-        print(self.__rlt_robust)
-                
-            
+        self.__rlt_robust["extra_cov"] = pd.DataFrame(self.__coverage, columns=['extra_cov'])
+        rank = self.__rlt_robust[['sum', 'extra_cov']].rank(axis=0, method='first', ascending=False)
+        print(rank)
+
+
 
 
     def __get_sum(self) -> int:
@@ -201,7 +202,7 @@ class ReadA:
 
 if __name__ == "__main__":
     pd.set_option('display.max_rows', None)
-    ins = ReadA("./data/neighbour-full.csv", 10)
+    ins = ReadA("./data/neighbour-full.csv", 5)
     ins.read_a()
     ins.extra_coverage()
     ins.print_info()
