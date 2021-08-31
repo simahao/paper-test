@@ -27,6 +27,7 @@ class ReadA:
 
     __sk_id = 0
 
+
     # constants for edge server itself
     ESI_PESUDO = 99999
 
@@ -41,6 +42,7 @@ class ReadA:
         self.__col.insert(0, "sk_id")
         self.__rlt_robust = pd.DataFrame(columns=self.__col)
         self.__rlt_server = pd.DataFrame(columns=self.__col)
+        self.__statistic = pd.DataFrame(columns=['k', 'origin_way_robust', 'new_robust', 'extra_cov', 'pct1', 'pct2'])
 
 
     def __get_extra_es(self) -> bool:
@@ -176,12 +178,22 @@ class ReadA:
                     cov = cov +  ex["counts"]
             self.__coverage.append(cov)
         self.__rlt_robust["extra_cov"] = pd.DataFrame(self.__coverage, columns=['extra_cov'])
+
+    def statistic(self):
         rank = self.__rlt_robust[['robust', 'extra_cov']].rank(axis=0, method='first', ascending=False)
         rank.columns = ['rank_robust', 'rank_extra_cov']
         rank['rank_sum'] = rank.sum(axis=1)
         origin = self.__rlt_robust[['robust', 'extra_cov']]
-        statistic = pd.concat([origin, rank], axis=1)
-        print(statistic)
+        tmp = pd.concat([origin, rank], axis=1)
+        sum = self.__get_sum()
+        # columns = k, robust, new_robust, new_extra_cov, pct1, pct2
+        robust = origin.sort_values(by="robust", axis=0, ascending=False).iat(0, 0)
+        tmp.sort_values(by=["rank_sum", "rank_robust"], axis=0, ascending=[True, True], inplace=True)
+        new_robust = tmp.iat(0, 0)
+        new_extra_cov = tmp.iat(0, 1)
+        pct1 = round(robust / sum, 2)
+        pct2 = round((new_robust + new_extra_cov) / sum, 2)
+        self.__statistic
 
         # rank.sort_values(by=['rank_sum', 'robust'], ascending=[True, True])
 
