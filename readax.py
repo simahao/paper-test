@@ -12,9 +12,6 @@ class ReadA:
     # target number of edge servers
     __K = 0
 
-    # total number of candidate
-    __total = 0
-
     # iterate number of es(i)'s neighbour, include es(i) itself
     __iter_num = 0
 
@@ -159,11 +156,10 @@ class ReadA:
                 if (self.__get_extra_es() == False):
                     print("there are not enough edge servers this time")
                     break
-        self.__rlt_robust["sum"] = self.__rlt_robust.loc[:, 1:].sum(axis=1)
-        self.__rlt_robust = self.__rlt_robust.sort_values(by="sum", axis=0, ascending=False, ignore_index=True)
+        self.__rlt_robust["robust"] = self.__rlt_robust.loc[:, 1:].sum(axis=1)
+        # self.__rlt_robust = self.__rlt_robust.sort_values(by="", axis=0, ascending=False, ignore_index=True)
 
     def extra_coverage(self):
-        # tmp = copy.deepcopy(self.__rlt_server)
         tmp = self.__rlt_robust.join(self.__rlt_server.set_index('sk_id'), on='sk_id', how='inner', lsuffix="_left")
         tmp = tmp.iloc[:, len(self.__col) + 1:]
         # iterate each row in rlt for extra coverage
@@ -173,8 +169,6 @@ class ReadA:
             cov = 0
             # iterate each element in list, exclude last "sum"
             for i in range(len(servers)):
-                # if (i == 0):
-                #     continue
                 ex_df = self.__df.query('site == @servers[@i] and counts != @self.ESI_PESUDO').sort_values(by='counts', axis=0, ascending=False)
                 for (ix, ex) in ex_df.iterrows():
                     if (ex["site"] in self.__sk_server):
@@ -182,10 +176,14 @@ class ReadA:
                     cov = cov +  ex["counts"]
             self.__coverage.append(cov)
         self.__rlt_robust["extra_cov"] = pd.DataFrame(self.__coverage, columns=['extra_cov'])
-        rank = self.__rlt_robust[['sum', 'extra_cov']].rank(axis=0, method='first', ascending=False)
-        print(rank)
+        rank = self.__rlt_robust[['robust', 'extra_cov']].rank(axis=0, method='first', ascending=False)
+        rank.columns = ['rank_robust', 'rank_extra_cov']
+        rank['rank_sum'] = rank.sum(axis=1)
+        origin = self.__rlt_robust[['robust', 'extra_cov']]
+        statistic = pd.concat([origin, rank], axis=1)
+        print(statistic)
 
-
+        # rank.sort_values(by=['rank_sum', 'robust'], ascending=[True, True])
 
 
     def __get_sum(self) -> int:
@@ -197,7 +195,7 @@ class ReadA:
 
     def print_info(self):
         sum = self.__get_sum()
-        sk_sum = self.__rlt_robust.at[0, "sum"]
+        sk_sum = self.__rlt_robust.at[0, "robust"]
         print("sk robust:{}\ntotal users:{}\nratio:{}".format(sk_sum, sum, round(sk_sum / sum, 2)))
 
 if __name__ == "__main__":
