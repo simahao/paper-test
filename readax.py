@@ -33,17 +33,18 @@ class ReadA:
 
     DEBUG = True
 
-    def __init__(self, neighbour_csv, K=10):
-        self.__K = K
+    def __init__(self, neighbour_csv):
         self.__df = pd.DataFrame(pd.read_csv(neighbour_csv, sep=",", dtype={"site" : "Int64", "nei_site" : "Int64", "distance" : "Int64", "counts" : "Int64"}))
         self.__es = self.__df["site"].unique()
-        # because sk_id, len(col)=K+1
+        self.__statistic = pd.DataFrame(columns=['K', 'robust', 'new_robust', 'extra_cov', 'pct1', 'pct2'])
+
+    def init(self, k=10):
+        self.__K = k
         self.__col = [i for i in range(self.__K)]
+        # because sk_id, len(col)=K+1
         self.__col.insert(0, "sk_id")
         self.__rlt_robust = pd.DataFrame(columns=self.__col)
         self.__rlt_server = pd.DataFrame(columns=self.__col)
-        self.__statistic = pd.DataFrame(columns=['k', 'origin_way_robust', 'new_robust', 'extra_cov', 'pct1', 'pct2'])
-
 
     def __get_extra_es(self) -> bool:
 
@@ -120,7 +121,6 @@ class ReadA:
             self.__sk_candidate.clear()
             self.__sk_server.clear()
             self.__sk_robust.clear()
-            self.__robustness = 0
             self.__iter_num = 1
 
             esi_rubust_df = self.__df.query('site == @esi and counts == @self.ESI_PESUDO')
@@ -159,7 +159,6 @@ class ReadA:
                     print("there are not enough edge servers this time")
                     break
         self.__rlt_robust["robust"] = self.__rlt_robust.loc[:, 1:].sum(axis=1)
-        # self.__rlt_robust = self.__rlt_robust.sort_values(by="", axis=0, ascending=False, ignore_index=True)
 
     def extra_coverage(self):
         tmp = self.__rlt_robust.join(self.__rlt_server.set_index('sk_id'), on='sk_id', how='inner', lsuffix="_left")
@@ -187,33 +186,33 @@ class ReadA:
         tmp = pd.concat([origin, rank], axis=1)
         sum = self.__get_sum()
         # columns = k, robust, new_robust, new_extra_cov, pct1, pct2
-        robust = origin.sort_values(by="robust", axis=0, ascending=False).iat(0, 0)
+        robust = origin.sort_values(by="robust", axis=0, ascending=False).iat[0, 0]
         tmp.sort_values(by=["rank_sum", "rank_robust"], axis=0, ascending=[True, True], inplace=True)
-        new_robust = tmp.iat(0, 0)
-        new_extra_cov = tmp.iat(0, 1)
+        new_robust = tmp.iat[0, 0]
+        extra_cov = tmp.iat[0, 1]
         pct1 = round(robust / sum, 2)
-        pct2 = round((new_robust + new_extra_cov) / sum, 2)
-        self.__statistic
+        pct2 = round((new_robust + extra_cov) / sum, 2)
+        d = {'K':self.__K, 'robust':robust, 'new_robust':new_robust, 'extra_cov':extra_cov, 'pct1':pct1, 'pct2':pct2}
+        self.__statistic = self.__statistic.append(d, ignore_index=True)
+        print(self.__statistic)
 
         # rank.sort_values(by=['rank_sum', 'robust'], ascending=[True, True])
 
 
     def __get_sum(self) -> int:
-        # unique_df = pd.DataFrame(self.__es, columns=['site'])
+        # unique_df = pd.DataFrame(self.__es, columns=['site'])qq
         # dfp = self.__df.query('counts == @self.ESI_PESUDO').join(unique_df.set_index('site'), on='site', how='inner')
         # sum = dfp["distance"].sum()
-        sum = self.__df.query('counts == @self.ESI_PESUDO')["distance"].sum()
-        return sum
+        return self.__df.query('counts == @self.ESI_PESUDO')["distance"].sum()
 
-    def print_info(self):
-        sum = self.__get_sum()
-        sk_sum = self.__rlt_robust.at[0, "robust"]
-        print("sk robust:{}\ntotal users:{}\nratio:{}".format(sk_sum, sum, round(sk_sum / sum, 2)))
 
 if __name__ == "__main__":
     pd.set_option('display.max_rows', None)
-    ins = ReadA("./data/neighbour-full.csv", 5)
-    ins.read_a()
-    ins.extra_coverage()
-    ins.print_info()
+
+    ins = ReadA("./data/neighbour-full.csv")
+    for i in range(3, 16):
+        ins.init(i)
+        ins.read_a()
+        ins.extra_coverage()
+        ins.statistic()
 
